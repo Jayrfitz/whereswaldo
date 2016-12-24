@@ -1,88 +1,74 @@
-import numpy as np
-import tkinter as tk
 from tkinter import *
-from PIL import Image, ImageTk
-width = 0
-height = 0
+from PIL import Image, ImageTk, ImageDraw
+root = Tk()
+i = 0
+folder = "/Users/jasonfitzgerald/Desktop/FreeTime/hackathon/whereswaldo-master/"
+
+Tk.wm_title(root,"Wheres Waldo")
+#Add a canvas to the window
+canvas = Canvas(root,width=1000, height=1000)
+canvas.grid(column=0, row=0, sticky=N+S+E+W)
+
+#Allow the canvas (in row/column 0,0)
+#to "grow" to fill the entire window.
+root.grid_rowconfigure(0, weight=1)
+root.grid_columnconfigure(0, weight=1)
 
 
-class waldo(tk.Tk):
-
-    def __init__(self, *args, **kwargs):
-        tk.Tk.__init__(self, *args, **kwargs)
-        container = tk.Frame(self)
-
-        tk.Tk.wm_title(self,"Wheres Waldo")
-        container.pack(side = "top", fill  = "both", expand = True)
-
-        container.grid_rowconfigure(0,weight = 1)
-        container.grid_columnconfigure(0,weight = 1)
-
-        self.frames = {}
+#Add a scrollbar that will scroll the canvas vertically
+vscrollbar = Scrollbar(root)
+vscrollbar.grid(column=1, row=0, sticky=N+S)
+#Link the scrollbar to the canvas
+canvas.config(yscrollcommand=vscrollbar.set)
+vscrollbar.config(command=canvas.yview)
 
 
-        xscrollbar = Scrollbar(self, orient=HORIZONTAL)
-        xscrollbar.pack(side=BOTTOM, fill=X)
-
-        yscrollbar = Scrollbar(self)
-        yscrollbar.pack( side = RIGHT, fill=Y )
-
-
-
-        f = StartPage
-        frame = f(container, self)
-
-        self.frames[f] = frame
-        frame.grid(row = 0, column = 0, sticky = "nsew")
-
-        self.show_frame(StartPage)
-    def show_frame(self,cont):
-        frame = self.frames[cont]
-        frame.tkraise()
+#Add a scrollbar that will scroll the canvas horizontally
+hscrollbar = Scrollbar(root, orient=HORIZONTAL)
+hscrollbar.grid(column=0, row=1, sticky=E+W)
+canvas.config(xscrollcommand=hscrollbar.set)
+hscrollbar.config(command=canvas.xview)
 
 
 
+#This frame must be defined as a child of the canvas,
+#even though we later add it as a window to the canvas
+f = Frame(canvas)
 
-class StartPage(tk.Frame):
+def hint(image):
+    global i
+    global label
+    i = i + 1
+    label.grid_forget()
+    if i == 1:
+        image = Image.open(folder +"waldo_dinosaurs_hint1.png")
+    if i == 2:
+        image = Image.open(folder +"waldo_dinosaurs_hint2.png")
+    photo = ImageTk.PhotoImage(image)
+    label = Label(f,image = photo)
+    label.image = photo # keep a reference!
+    label.grid(row=1, column=1)
+    if i > 2:
+        return
 
-    def __init__(self,parent,master):
+image = Image.open(folder +"waldo_dinosaurs.png")
+photo = ImageTk.PhotoImage(image)
+label = Label(f,image = photo)
+label.image = photo # keep a reference!
+label.grid(row=1, column=1)
 
-        global width,height
-        tk.Frame.__init__(self,parent)
-
-        image = Image.open("/Users/jasonfitzgerald/Desktop/FreeTime/hackathon/whereswaldo-master/waldo_dinosaurs.png")
-        photo = ImageTk.PhotoImage(image)
-        nextButton = Button(self,text="Hint")
-        nextButton.pack(side = TOP)
-
-        label = Label(image=photo)
-        label.image = photo # keep a reference!
-        label.pack(side = BOTTOM)
-
-        # sb = Scrollbar(self,orient = VERTICAL)
-        # sb.pack(side=LEFT,fill=Y)
-
-
-        # waldo1 = Image.open("swamp_waldo.jpg")
-        # waldo2 = Image.open("waldo_dinosaurs.jpg")
-        # waldo3 = Image.open("waldo_store.jpg")
-        # waldo4 = Image.open("waldo_streets.jpg")
-        # waldo5 = Image.open("waldo_wizards.jpg")
-        # waldo6 = Image.open("maps_troy_waldo")
-        #
-        # waldo1.load()
-        # waldo2.load()
-        # waldo3.load()
-        # waldo4.load()
-        # waldo5.load()
-        # waldo6.load()
-        #
-        #
-        #
-        # waldo6.show()
+#Create a button in the frame.
+b = Button(f,text="Hint",command = lambda: hint(image))
+b.grid(row=0, column=1)
 
 
-app = waldo()
-app.geometry("2000x2000")
-# app.resizable(width=False, height=False)
-app.mainloop()
+#Add the frame to the canvas
+canvas.create_window((0,0), anchor=NW, window=f)
+
+#IMPORTANT:
+f.update_idletasks() #REQUIRED: For f.bbox() below to work!
+
+#Tell the canvas how big of a region it should scroll
+canvas.config(scrollregion= f.bbox("all")  )
+
+mainloop()  #Wait for user events!
